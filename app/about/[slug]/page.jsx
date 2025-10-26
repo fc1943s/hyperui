@@ -1,82 +1,59 @@
-import { notFound } from 'next/navigation'
+import { promises as fs } from 'node:fs'
 
-import { promises as fs } from 'fs'
-import { join } from 'path'
-import { serialize } from 'next-mdx-remote/serialize'
+import { getAboutPage, formatSlug, pagesDir } from '@service/database'
 
-import rehypeExternalLinks from 'rehype-external-links'
-import remarkSlug from 'remark-slug'
-
-import { ogMeta, twitterMeta } from '@data/metadata'
-
-import Ad from '@component/Ad'
-import FaqList from '@component/FaqList'
-import Container from '@component/Container'
 import MdxRemoteRender from '@component/MdxRemoteRender'
 
-const mdxComponents = {
-  FaqList,
+export async function generateStaticParams() {
+  const pageFiles = await fs.readdir(pagesDir)
+  const staticParams = []
+
+  for (const pageFile of pageFiles) {
+    if (!pageFile.endsWith('.mdx')) {
+      continue
+    }
+
+    staticParams.push({ slug: formatSlug(pageFile) })
+  }
+
+  return staticParams
 }
 
-const pagesPath = join(process.cwd(), '/src/data/pages')
-
 export async function generateMetadata({ params }) {
-  const { pageData } = await getPage(params)
+  const { pageData } = await getAboutPage(params)
 
   return {
     title: `${pageData.title} | HyperUI`,
     description: pageData.description,
-    openGraph: {
-      title: `${pageData.title} | HyperUI`,
-      description: pageData.description,
-      ...ogMeta,
+    alternates: {
+      canonical: `/about/${params.slug}`,
     },
-    twitter: {
-      title: `${pageData.title} | HyperUI`,
-      description: pageData.description,
-      ...twitterMeta,
-    },
-  }
-}
-
-export async function generateStaticParams() {
-  return await fs.readdir(pagesPath)
-}
-
-async function getPage(params) {
-  try {
-    const pagePath = join(pagesPath, `${params.slug}.mdx`)
-    const pageItem = await fs.readFile(pagePath, 'utf-8')
-
-    const mdxSource = await serialize(pageItem, {
-      parseFrontmatter: true,
-      mdxOptions: {
-        remarkPlugins: [remarkSlug],
-        rehypePlugins: [[rehypeExternalLinks, { target: '_blank' }]],
-      },
-    })
-
-    return {
-      pageData: mdxSource.frontmatter,
-      pageContent: mdxSource,
-    }
-  } catch {
-    notFound()
   }
 }
 
 export default async function Page({ params }) {
-  const { pageData, pageContent } = await getPage(params)
+  const { pageData, pageContent } = await getAboutPage(params)
+
+  const aboutPageSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: pageData.title,
+    description: pageData.description,
+    url: `https://www.hyperui.dev/about/${params.slug}`,
+  }
 
   return (
-    <Container id="mainContent" classNames="py-8 lg:py-12 space-y-8">
-      <Ad />
+    <div id="mainContent" className="mx-auto max-w-screen-xl px-4 py-8 lg:py-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutPageSchema) }}
+      />
 
       <article className="prose mx-auto">
         <h1>{pageData.title}</h1>
 
-        <MdxRemoteRender mdxSource={pageContent} mdxComponents={mdxComponents} />
+        <MdxRemoteRender mdxSource={pageContent} />
       </article>
-    </Container>
+    </div>
   )
 }

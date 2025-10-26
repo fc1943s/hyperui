@@ -1,80 +1,64 @@
-import { notFound } from 'next/navigation'
+import { promises as fs } from 'node:fs'
 
-import { promises as fs } from 'fs'
-import { join } from 'path'
-import { serialize } from 'next-mdx-remote/serialize'
+import { getPost, formatSlug, postsDir } from '@service/database'
 
-import rehypeExternalLinks from 'rehype-external-links'
-import remarkSlug from 'remark-slug'
-
-import { ogMeta, twitterMeta } from '@data/metadata'
-
-import Ad from '@component/Ad'
-import Container from '@component/Container'
-import BlogPreview from '@component/BlogPreview'
-import TableContent from '@component/BlogTableContent'
 import MdxRemoteRender from '@component/MdxRemoteRender'
 
-const mdxComponents = {
-  BlogPreview,
-}
+export async function generateStaticParams() {
+  const postFiles = await fs.readdir(postsDir)
+  const staticParams = []
 
-const postsPath = join(process.cwd(), '/src/data/posts')
+  for (const postFile of postFiles) {
+    if (!postFile.endsWith('.mdx')) {
+      continue
+    }
+
+    staticParams.push({ slug: formatSlug(postFile) })
+  }
+
+  return staticParams
+}
 
 export async function generateMetadata({ params }) {
-  const { blogData } = await getPost(params)
+  const { frontmatter } = await getPost(params)
 
   return {
-    title: `${blogData.title} | HyperUI`,
-    description: blogData.description,
-    openGraph: {
-      title: `${blogData.title} | HyperUI`,
-      description: blogData.description,
-      ...ogMeta,
+    title: `${frontmatter.title} | HyperUI`,
+    description: frontmatter.description,
+    alternates: {
+      canonical: `/blog/${params.slug}`,
     },
-    twitter: {
-      title: `${blogData.title} | HyperUI`,
-      description: blogData.description,
-      ...twitterMeta,
-    },
-  }
-}
-
-export async function generateStaticParams() {
-  return await fs.readdir(postsPath)
-}
-
-async function getPost(params) {
-  try {
-    const postPath = join(postsPath, `${params.slug}.mdx`)
-    const postItem = await fs.readFile(postPath, 'utf-8')
-
-    const mdxSource = await serialize(postItem, {
-      parseFrontmatter: true,
-      mdxOptions: {
-        remarkPlugins: [remarkSlug],
-        rehypePlugins: [[rehypeExternalLinks, { target: '_blank' }]],
-      },
-    })
-
-    return {
-      blogData: mdxSource.frontmatter,
-      blogContent: mdxSource,
-    }
-  } catch {
-    notFound()
   }
 }
 
 export default async function Page({ params }) {
-  const { blogData, blogContent } = await getPost(params)
+  const { frontmatter, readingTime, ...content } = await getPost(params)
 
   const schemaData = {
-    '@context': 'http://schema.org',
-    '@type': 'NewsArticle',
-    headline: `${blogData.title}`,
-    image: 'https://www.hyperui.dev/og.jpg',
-    datePublished: `${blogData.date}`,
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: frontmatter.title,
+    description: frontmatter.description,
+    image: ['https://www.hyperui.dev/og.jpg'],
+    url: `https://www.hyperui.dev/blog/${params.slug}`,
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `https://www.hyperui.dev/blog/${params.slug}`,
+    },
+    datePublished: frontmatter.published,
+    dateModified: frontmatter.updated,
+    author: {
+      '@type': 'Person',
+      name: 'HyperUI',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'HyperUI',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://www.hyperui.dev/og.jpg',
+      },
+    },
   }
 
   return (
@@ -84,21 +68,33 @@ export default async function Page({ params }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
       />
 
-      <Container id="mainContent" classNames="py-8 lg:py-12 space-y-8">
-        <Ad />
+      <div id="mainContent" className="mx-auto max-w-screen-xl px-4 py-8 lg:py-12">
+        <article className="prose prose-pre:rounded-lg mx-auto">
+          <h1>{frontmatter.title}</h1>
 
-        <article data-article className="prose mx-auto">
-          <header>
-            <time className="text-sm text-gray-700">{blogData.date}</time>
+          <dl className="grid grid-cols-[80px_1fr] *:m-0">
+            <dt>Reading:</dt>
 
-            <h1 className="mt-1">{blogData.title}</h1>
-          </header>
+            <dd>
+              <time>{readingTime} min</time>
+            </dd>
 
-          <TableContent />
+            <dt>Published:</dt>
 
-          <MdxRemoteRender mdxSource={blogContent} mdxComponents={mdxComponents} />
+            <dd>
+              <time>{frontmatter.published}</time>
+            </dd>
+
+            <dt>Updated:</dt>
+
+            <dd>
+              <time>{frontmatter.updated}</time>
+            </dd>
+          </dl>
+
+          <MdxRemoteRender mdxSource={content} />
         </article>
-      </Container>
+      </div>
     </>
   )
 }

@@ -1,16 +1,11 @@
-export default function PreviewTitle({ componentTitle, componentHash }) {
-  return (
-    <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">
-      <a href={`#${componentHash}`} className="group relative inline-block">
-        <span
-          aria-hidden="true"
-          className="hidden group-hover:opacity-25 group-focus:opacity-25 lg:absolute lg:inset-y-0 lg:-left-6 lg:block lg:opacity-0 lg:transition"
-        >
-          #
-        </span>
+import PreviewCopyUrl from '@component/PreviewCopyUrl'
 
-        {componentTitle}
-      </a>
-    </h2>
+export default function PreviewTitle({ componentTitle, shareUrl }) {
+  return (
+    <div className="flex items-center gap-2">
+      <PreviewCopyUrl shareUrl={shareUrl} />
+
+      <h2 className="text-2xl font-bold text-stone-900">{componentTitle}</h2>
+    </div>
   )
 }

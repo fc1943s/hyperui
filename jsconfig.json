@@ -1,20 +1,15 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es2022",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["app/*"],
       "@component/*": ["src/components/*"],
-      "@data/*": ["src/data/*"],
       "@style/*": ["src/styles/*"],
-      "@util/*": ["src/utils/*"],
+      "@service/*": ["src/service/*"],
+      "@hook/*": ["src/hooks/*"]
     },
-    "plugins": [
-      {
-        "name": "next",
-      },
-    ],
+    "plugins": [{ "name": "next" }]
   },
-  "include": ["next-env.d.js", "**/*.js", "**/*.jsx"],
-  "exclude": ["node_modules"],
+  "include": ["**/*.js", "**/*.jsx"],
+  "exclude": ["node_modules", ".next", "out", ".vercel"]
 }

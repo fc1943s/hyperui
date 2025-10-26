@@ -2,6 +2,11 @@
 
 import { MDXRemote } from 'next-mdx-remote'
 
-export default function MdxContent({ mdxSource, mdxComponents = {}, mdxScope = {} }) {
-  return <MDXRemote {...mdxSource} components={mdxComponents} scope={mdxScope} />
+import Ad from '@component/global/Ad'
+import CollectionList from '@component/CollectionList'
+
+export default function MdxContent({ mdxSource, mdxScope = {} }) {
+  const mdxComponents = { Ad, CollectionList }
+
+  return <MDXRemote {...mdxSource} scope={mdxScope} components={mdxComponents} />
 }

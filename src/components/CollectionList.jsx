@@ -2,16 +2,13 @@
 
 import ComponentPreview from '@component/ComponentPreview'
 
-export default function CollectionList({ componentsData, componentContainer }) {
+export default function CollectionList({ componentsData }) {
   return (
-    <div className="not-prose mx-auto xl:max-w-[1348px]">
+    <div className="not-prose mx-auto mt-8 lg:mt-12 xl:max-w-[1348px]">
       <ul className="space-y-8 lg:space-y-12">
         {componentsData.map((componentData) => (
-          <li key={componentData.id}>
-            <ComponentPreview
-              componentData={componentData}
-              componentContainer={componentContainer}
-            />
+          <li key={componentData.key}>
+            <ComponentPreview componentData={componentData} />
           </li>
         ))}
       </ul>

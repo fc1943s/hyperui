@@ -1,19 +1,24 @@
-export default function PreviewType({ componentId, handleSetCodeType }) {
+import { useId } from 'react'
+
+export default function PreviewType({ codeType, handleSetCodeType }) {
+  const formId = useId()
+
   return (
-    <div>
-      <label htmlFor={`CodeType${componentId}`} className="sr-only">
+    <span className="hidden sm:block">
+      <label htmlFor={formId} className="sr-only">
         Code Type
       </label>
 
       <select
-        id={`CodeType${componentId}`}
-        onInput={(e) => handleSetCodeType(e.target.value)}
-        className="rounded-md border-2 border-gray-900 py-1.5 pl-3 text-sm font-medium"
+        id={formId}
+        value={codeType}
+        onChange={(e) => handleSetCodeType(e.target.value)}
+        className="h-10 rounded-lg border-stone-300 pl-3 font-medium shadow-sm transition-colors hover:bg-stone-100 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-white focus:outline-none"
       >
         <option value="html">HTML</option>
         <option value="jsx">JSX</option>
         <option value="vue">Vue</option>
       </select>
-    </div>
+    </span>
   )
 }
